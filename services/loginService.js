@@ -13,8 +13,13 @@ const login = async (payload) => {
   if (!userData) {
     throw { statusCode: 404, message: 'Wrong credentials' };
   }
-  
-  const jwtData = { id: userData.id, username: userData.username, email: userData.email };
+
+  const jwtData = {
+    id: userData.id,
+    username: userData.username,
+    email: userData.email,
+    admin: userData.admin,
+  };
   const jwtConfig = { expiresIn: '12h', algorithm: 'HS256' };
   const token = jwt.sign(jwtData, process.env.JWT_SECRET, jwtConfig);
   return token;

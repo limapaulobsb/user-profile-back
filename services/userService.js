@@ -17,6 +17,7 @@ const create = async (payload) => {
   if (password.length < 6) {
     throw { statusCode: 400, message: 'Invalid password' };
   }
+
   const userData = await User.findOne({ where: { [Op.or]: [{ username }, { email }] } });
   if (userData) {
     throw { statusCode: 400, message: 'User already exists' };
@@ -24,14 +25,16 @@ const create = async (payload) => {
   return User.create(payload);
 };
 
-const findAll = () => User.findAll({ attributes: { exclude: ['password'] } });
+const findAll = () => User.findAll({ attributes: { exclude: ['password', 'admin'] } });
 
-const findById = (id) => User.findByPk(id, { attributes: { exclude: ['password'] } });
+const findById = (id) =>
+  User.findByPk(id, { attributes: { exclude: ['password', 'admin'] } });
 
 const update = async (id, payload, session) => {
-  if (Number(id) !== session.id) {
+  if (Number(id) !== session.id && !session.admin) {
     throw { statusCode: 401, message: 'Unauthorized' };
   }
+
   const { email, password } = payload;
   if (email && !emailIsValid(email)) {
     throw { statusCode: 400, message: 'Invalid email' };
@@ -39,21 +42,27 @@ const update = async (id, payload, session) => {
   if (password && password.length < 6) {
     throw { statusCode: 400, message: 'Invalid password' };
   }
-  // const userData = await User.findByPk(id);
-  // if (!userData) {
-  //   throw { statusCode: 404, message: 'User not found' };
-  // }
+
+  if (Number(id) !== session.id) {
+    const userData = await User.findByPk(id);
+    if (!userData) {
+      throw { statusCode: 404, message: 'User not found' };
+    }
+  }
   return User.update(payload, { where: { id } });
 };
 
 const destroy = async (id, session) => {
-  if (Number(id) !== session.id) {
+  if (Number(id) !== session.id && !session.admin) {
     throw { statusCode: 401, message: 'Unauthorized' };
   }
-  // const userData = await User.findByPk(id);
-  // if (!userData) {
-  //   throw { statusCode: 404, message: 'User not found' };
-  // }
+
+  if (Number(id) !== session.id) {
+    const userData = await User.findByPk(id);
+    if (!userData) {
+      throw { statusCode: 404, message: 'User not found' };
+    }
+  }
   return User.destroy({ where: { id } });
 };
 
