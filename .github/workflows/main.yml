@@ -4,17 +4,16 @@ jobs:
   eslint:
     runs-on: ubuntu-latest
     steps:
-        - name: Git repository verification
-          uses: actions/checkout@v2
+      - name: Git repository verification
+        uses: actions/checkout@v2
 
-        - name: Node installation
-          uses: actions/setup-node@v1
-          with:
-            node-version: 17.4
+      - name: Node installation
+        uses: actions/setup-node@v1
+        with:
+          node-version: 17.4
 
+      - name: Installation of dependencies
+        run: npm install
 
-        - name: Installation of dependencies
-          run: npm install
-
-        - name: Run ESLint
-          run: npx eslint .
+      - name: Run ESLint
+        run: npx eslint .
