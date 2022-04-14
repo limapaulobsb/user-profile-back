@@ -1,4 +1,5 @@
 const { Router } = require('express');
+const authMiddleware = require('../middlewares/authMiddleware');
 const userService = require('../services/userService');
 
 const userRouter = Router();
@@ -30,19 +31,18 @@ userRouter.get('/:id', async ({ params: { id } }, res, next) => {
   }
 });
 
-userRouter.put('/:id', async ({ body: payload, params: { id } }, res, next) => {
+userRouter.put('/:id', authMiddleware, async (req, res, next) => {
   try {
-    await userService.update(payload, id);
+    await userService.update(req.params.id, req.body, req.user);
     return res.status(204).end();
   } catch (error) {
     next(error);
   }
 });
 
-userRouter.delete('/:id', async (req, res, next) => {
+userRouter.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
-    const { id } = req.params;
-    await userService.destroy(id);
+    await userService.destroy(req.params.id, req.user);
     return res.status(204).end();
   } catch (error) {
     next(error);
