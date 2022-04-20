@@ -5,9 +5,9 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
 const verify = {
-  credentials: async (username = '', email = '', password) => {
+  credentials: async (user, password) => {
     const data = await User.findOne({
-      where: { [Op.or]: [{ username }, { email }], password },
+      where: { [Op.or]: [{ username: user }, { email: user }], password },
     });
     if (!data) {
       throw { statusCode: 404, message: 'Wrong credentials' };
@@ -16,8 +16,8 @@ const verify = {
   },
 };
 
-const login = async ({ username, email, password }) => {
-  const userData = await verify.credentials(username, email, password);
+const login = async (user, password) => {
+  const userData = await verify.credentials(user, password);
   const jwtData = {
     id: userData.id,
     username: userData.username,

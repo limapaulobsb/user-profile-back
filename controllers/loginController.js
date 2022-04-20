@@ -3,10 +3,11 @@ const loginService = require('../services/loginService');
 
 const loginRouter = Router();
 
-loginRouter.post('/', async ({ body: payload }, res, next) => {
+loginRouter.post('/', async (req, res, next) => {
   try {
-    const token = await loginService.login(payload);
-    return res.status(200).json({token});
+    const { user, password } = req.body;
+    const token = await loginService.login(user, password);
+    return res.status(200).json({ token });
   } catch (error) {
     next(error);
   }
