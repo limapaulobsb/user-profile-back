@@ -4,10 +4,16 @@ const userService = require('../services/userService');
 
 const userRouter = Router();
 
-userRouter.post('/', async ({ body: payload }, res, next) => {
+userRouter.post('/', async (req, res, next) => {
   try {
-    const result = await userService.create(payload);
-    return res.status(201).json(result);
+    const payload = {
+      username: req.body.username,
+      email: req.body.email,
+      password: req.body.password,
+      name: req.body.name,
+    };
+    const { id } = await userService.create(payload);
+    return res.status(201).json({ id });
   } catch (error) {
     next(error);
   }
@@ -33,8 +39,13 @@ userRouter.get('/:id', async ({ params: { id } }, res, next) => {
 
 userRouter.put('/:id', authMiddleware, async (req, res, next) => {
   try {
-    // This!
-    await userService.update(Number(req.params.id), req.body, req.user);
+    const payload = {
+      username: req.body.username,
+      email: req.body.email,
+      password: req.body.password,
+      name: req.body.name,
+    };
+    await userService.update(Number(req.params.id), payload, req.session);
     return res.status(204).end();
   } catch (error) {
     next(error);
@@ -43,7 +54,7 @@ userRouter.put('/:id', authMiddleware, async (req, res, next) => {
 
 userRouter.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
-    await userService.destroy(Number(req.params.id), req.user);
+    await userService.destroy(Number(req.params.id), req.session);
     return res.status(204).end();
   } catch (error) {
     next(error);
