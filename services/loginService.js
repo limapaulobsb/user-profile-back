@@ -4,16 +4,20 @@ const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
-const login = async (payload) => {
-  const { username = '', email = '', password } = payload;
-  const userData = await User.findOne({
-    where: { [Op.or]: [{ username }, { email }], password },
-  });
+const verify = {
+  credentials: async (username = '', email = '', password) => {
+    const data = await User.findOne({
+      where: { [Op.or]: [{ username }, { email }], password },
+    });
+    if (!data) {
+      throw { statusCode: 404, message: 'Wrong credentials' };
+    }
+    return data;
+  },
+};
 
-  if (!userData) {
-    throw { statusCode: 404, message: 'Wrong credentials' };
-  }
-
+const login = async ({ username, email, password }) => {
+  const userData = await verify.credentials(username, email, password);
   const jwtData = {
     id: userData.id,
     username: userData.username,

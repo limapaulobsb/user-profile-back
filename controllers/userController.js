@@ -34,7 +34,7 @@ userRouter.get('/:id', async ({ params: { id } }, res, next) => {
 userRouter.put('/:id', authMiddleware, async (req, res, next) => {
   try {
     // This!
-    await userService.update(req.params.id, req.body, req.user);
+    await userService.update(Number(req.params.id), req.body, req.user);
     return res.status(204).end();
   } catch (error) {
     next(error);
@@ -43,7 +43,7 @@ userRouter.put('/:id', authMiddleware, async (req, res, next) => {
 
 userRouter.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
-    await userService.destroy(req.params.id, req.user);
+    await userService.destroy(Number(req.params.id), req.user);
     return res.status(204).end();
   } catch (error) {
     next(error);

@@ -1,68 +1,67 @@
 const { Op } = require('sequelize');
 const { User } = require('../models');
 
-const emailIsValid = (email) => {
-  const re = /\S+@\S+\.\S+/;
-  return re.test(email);
+const verify = {
+  authorization: (id, session) => {
+    if (id !== session.id && !session.admin) {
+      throw { statusCode: 401, message: 'Unauthorized' };
+    }
+  },
+  fields: (...fields) => {
+    fields.forEach((field) => {
+      if (!field) throw { statusCode: 400, message: 'Missing fields' };
+    });
+  },
+  email: (email) => {
+    const re = /\S+@\S+\.\S+/;
+    if (email && !re.test(email)) {
+      throw { statusCode: 400, message: 'Invalid email' };
+    }
+  },
+  password: (password) => {
+    if (password && password.length < 6) {
+      throw { statusCode: 400, message: 'Invalid password' };
+    }
+  },
+  userExists: async (option, ...query) => {
+    const data = await User.findOne({ where: { [Op.or]: query } });
+    if (option && data) {
+      throw { statusCode: 400, message: 'User already exists' };
+    }
+    if (!option && !data) {
+      throw { statusCode: 404, message: 'User not found' };
+    }
+  },
 };
 
 const create = async (payload) => {
   const { username, email, password } = payload;
-  if (!username || !email || !password) {
-    throw { statusCode: 400, message: 'Missing fields' };
-  }
-  if (!emailIsValid(email)) {
-    throw { statusCode: 400, message: 'Invalid email' };
-  }
-  if (password.length < 6) {
-    throw { statusCode: 400, message: 'Invalid password' };
-  }
-
-  const userData = await User.findOne({ where: { [Op.or]: [{ username }, { email }] } });
-  if (userData) {
-    throw { statusCode: 400, message: 'User already exists' };
-  }
+  verify.fields(username, email, password);
+  verify.email(email);
+  verify.password(password);
+  await verify.userExists(true, { username }, { email });
   return User.create(payload);
 };
 
 const findAll = () => User.findAll({ attributes: { exclude: ['password', 'admin'] } });
 
-const findById = (id) =>
-  User.findByPk(id, { attributes: { exclude: ['password', 'admin'] } });
+const findById = async (id) => {
+  await verify.userExists(false, { id });
+  return User.findByPk(id, { attributes: { exclude: ['password', 'admin'] } });
+};
 
 const update = async (id, payload, session) => {
-  if (Number(id) !== session.id && !session.admin) {
-    throw { statusCode: 401, message: 'Unauthorized' };
-  }
-
   const { email, password } = payload;
-  if (email && !emailIsValid(email)) {
-    throw { statusCode: 400, message: 'Invalid email' };
-  }
-  if (password && password.length < 6) {
-    throw { statusCode: 400, message: 'Invalid password' };
-  }
-
-  if (Number(id) !== session.id) {
-    const userData = await User.findByPk(id);
-    if (!userData) {
-      throw { statusCode: 404, message: 'User not found' };
-    }
-  }
+  verify.authorization(id, session);
+  verify.email(email);
+  verify.password(password);
+  await verify.userExists(false, { id });
   return User.update(payload, { where: { id } });
 };
 
 const destroy = async (id, session) => {
-  if (Number(id) !== session.id && !session.admin) {
-    throw { statusCode: 401, message: 'Unauthorized' };
-  }
-
-  if (Number(id) !== session.id) {
-    const userData = await User.findByPk(id);
-    if (!userData) {
-      throw { statusCode: 404, message: 'User not found' };
-    }
-  }
+  verify.authorization(id, session);
+  await verify.userExists(false, { id });
   return User.destroy({ where: { id } });
 };
 

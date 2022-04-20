@@ -8,7 +8,6 @@ module.exports = (req, _res, next) => {
     if (!authorization) {
       throw { statusCode: 404, message: 'Token not found' };
     }
-
     req.user = jwt.verify(authorization, process.env.JWT_SECRET);
     next();
   } catch (error) {
