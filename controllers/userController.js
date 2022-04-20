@@ -19,9 +19,12 @@ userRouter.post('/', async (req, res, next) => {
   }
 });
 
-userRouter.get('/', async (_req, res, next) => {
+userRouter.get('/', async (req, res, next) => {
   try {
-    const result = await userService.findAll();
+    const user = req.query.q;
+    const result = user
+      ? await userService.findByUser(user)
+      : await userService.findAll();
     return res.status(200).json(result);
   } catch (error) {
     next(error);

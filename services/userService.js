@@ -24,13 +24,17 @@ const verify = {
     }
   },
   userExists: async (option, ...query) => {
-    const data = await User.findOne({ where: { [Op.or]: query } });
+    const data = await User.findOne({
+      where: { [Op.or]: query },
+      attributes: { exclude: ['password', 'admin'] },
+    });
     if (option && data) {
       throw { statusCode: 400, message: 'User already exists' };
     }
     if (!option && !data) {
       throw { statusCode: 404, message: 'User not found' };
     }
+    return data;
   },
 };
 
@@ -45,10 +49,10 @@ const create = async (payload) => {
 
 const findAll = () => User.findAll({ attributes: { exclude: ['password', 'admin'] } });
 
-const findById = async (id) => {
-  await verify.userExists(false, { id });
-  return User.findByPk(id, { attributes: { exclude: ['password', 'admin'] } });
-};
+const findById = async (id) => verify.userExists(false, { id });
+
+const findByUser = async (user) =>
+  verify.userExists(false, { username: user }, { email: user });
 
 const update = async (id, payload, session) => {
   const { email, password } = payload;
@@ -69,6 +73,7 @@ module.exports = {
   create,
   findAll,
   findById,
+  findByUser,
   update,
   destroy,
 };
